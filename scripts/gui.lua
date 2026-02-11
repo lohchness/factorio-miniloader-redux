@@ -78,6 +78,20 @@ local function onGuiOpened(event)
 
     This.MiniLoader:writeConfigToEntity(ml_entity.config.inserter_config, ml_entity.loader)
     game.players[event.player_index].opened = ml_entity.loader
+
+
+    local anchor = {
+        gui = defines.relative_gui_type.loader_gui,
+        position = defines.relative_gui_position.bottom,
+    }
+
+    local frame = game.get_player(event.player_index).gui.relative.add
+        {
+            type = 'frame',
+            anchor = anchor,
+        }
+    frame.add { type = 'button', name='hpsmlbutton', caption = 'click to print hello' }
+
 end
 
 ---@param event EventData.on_gui_closed
@@ -88,10 +102,23 @@ local function onGuiClosed(event)
     if not Is.Valid(event.entity) then return end
     if event.entity.unit_number ~= ml_entity.loader.unit_number then return end
 
+    -- Clears GUI element(s) because GUI elements will just be re-added again and again
+    local player = game.get_player(event.player_index)
+    player.gui.relative.clear()
+
     clear_player_gui(event.player_index)
 
     This.MiniLoader:readConfigFromEntity(ml_entity.loader, ml_entity)
     This.MiniLoader:reconfigure(ml_entity)
+end
+
+
+local function onGuiClick(event)
+    if event.element.name == "hpsmlbutton" then
+        local ml_entity = get_player_gui(event.player_index)
+        if not ml_entity then return end
+        game.get_player(event.player_index).print("Hello world! The current loader opened has ml_entity.main.unit_number "..ml_entity.main.unit_number)
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -105,6 +132,7 @@ local function register_events()
     -- Gui updates / sync inserters
     Event.register(defines.events.on_gui_opened, onGuiOpened, ml_entity_filter)
     Event.register(defines.events.on_gui_closed, onGuiClosed, ml_loader_filter)
+    Event.register(defines.events.on_gui_click, onGuiClick)
     Event.on_nth_tick(TICK_INTERVAL, sync_open_guis)
 end
 
